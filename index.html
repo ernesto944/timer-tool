@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Multi Timer Scheduler</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: linear-gradient(135deg, #0f172a, #111827, #020617);
+      color: #e5e7eb;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: auto;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #38bdf8;
+      text-shadow: 0 0 18px rgba(56, 189, 248, 0.6);
+    }
+
+    .top-panel {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 25px;
+      flex-wrap: wrap;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      border-radius: 16px;
+      padding: 18px;
+      box-shadow: 0 0 25px rgba(0, 0, 0, 0.35);
+    }
+
+    .clock {
+      font-size: 1.4rem;
+      color: #facc15;
+      font-weight: 600;
+    }
+
+    button {
+      border: none;
+      border-radius: 10px;
+      padding: 9px 14px;
+      cursor: pointer;
+      font-weight: 600;
+      color: white;
+      transition: 0.2s;
+      background: #334155;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.15);
+    }
+
+    .add-btn {
+      background: #0284c7;
+    }
+
+    .start-btn {
+      background: #16a34a;
+    }
+
+    .pause-btn {
+      background: #ca8a04;
+    }
+
+    .stop-btn {
+      background: #dc2626;
+    }
+
+    .remove-btn {
+      background: #7f1d1d;
+    }
+
+    .small-btn {
+      padding: 7px 10px;
+      font-size: 0.85rem;
+    }
+
+    .timers-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 20px;
+    }
+
+    .timer-card {
+      background: rgba(15, 23, 42, 0.92);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow: 0 0 25px rgba(14, 165, 233, 0.08);
+    }
+
+    .timer-card.running {
+      border-color: rgba(34, 197, 94, 0.8);
+      box-shadow: 0 0 25px rgba(34, 197, 94, 0.25);
+    }
+
+    .timer-card.paused {
+      border-color: rgba(250, 204, 21, 0.8);
+      box-shadow: 0 0 25px rgba(250, 204, 21, 0.18);
+    }
+
+    .timer-card.finished {
+      border-color: rgba(239, 68, 68, 0.9);
+      box-shadow: 0 0 30px rgba(239, 68, 68, 0.3);
+    }
+
+    .timer-header {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+      align-items: center;
+    }
+
+    .timer-name {
+      flex: 1;
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid #334155;
+      background: #020617;
+      color: #e5e7eb;
+      font-size: 1rem;
+    }
+
+    .display {
+      text-align: center;
+      font-size: 3rem;
+      font-weight: 700;
+      color: #67e8f9;
+      margin: 18px 0;
+      letter-spacing: 2px;
+      text-shadow: 0 0 15px rgba(103, 232, 249, 0.45);
+    }
+
+    .status {
+      text-align: center;
+      margin-bottom: 15px;
+      color: #cbd5e1;
+      font-size: 0.95rem;
+    }
+
+    .controls,
+    .adjustments {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: 15px;
+    }
+
+    .schedule-box {
+      border-top: 1px solid rgba(148, 163, 184, 0.25);
+      padding-top: 15px;
+      margin-top: 10px;
+    }
+
+    .schedule-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    label {
+      font-size: 0.85rem;
+      color: #94a3b8;
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    input[type="time"],
+    input[type="number"] {
+      width: 100%;
+      padding: 9px;
+      border-radius: 10px;
+      border: 1px solid #334155;
+      background: #020617;
+      color: #e5e7eb;
+    }
+
+    .schedule-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .schedule-info {
+      text-align: center;
+      color: #a5b4fc;
+      margin-top: 8px;
+      font-size: 0.88rem;
+      min-height: 20px;
+    }
+
+    .empty {
+      text-align: center;
+      color: #94a3b8;
+      margin-top: 40px;
+      font-size: 1rem;
+    }
+
+    @media (max-width: 500px) {
+      .display {
+        font-size: 2.4rem;
+      }
+
+      .schedule-row {
+        grid-template-columns: 1fr;
+      }
+
+      .top-panel {
+        justify-content: center;
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>Timer Scheduler</h1>
+
+    <div class="top-panel">
+      <div>
+        <div>Current Time</div>
+        <div class="clock" id="currentClock">--:--:--</div>
+      </div>
+
+      <button class="add-btn" onclick="addTimer()">+ Add Timer</button>
+    </div>
+
+    <div class="timers-grid" id="timersContainer"></div>
+    <div class="empty" id="emptyMessage">No timers yet. Click "Add Timer" to create one.</div>
+  </div>
+
+  <script>
+    let timers = [];
+    let timerIdCounter = 1;
+
+    function updateClock() {
+      const now = new Date();
+      document.getElementById("currentClock").textContent =
+        now.toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit"
+        });
+    }
+
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    function addTimer() {
+      const timer = {
+        id: timerIdCounter++,
+        name: "Timer",
+        duration: 5 * 60,
+        remaining: 5 * 60,
+        running: false,
+        paused: false,
+        finished: false,
+        scheduledTime: "",
+        scheduleEnabled: false,
+        interval: null
+      };
+
+      timers.push(timer);
+      renderTimers();
+    }
+
+    function removeTimer(id) {
+      const timer = timers.find(t => t.id === id);
+      if (timer && timer.interval) {
+        clearInterval(timer.interval);
+      }
+
+      timers = timers.filter(t => t.id !== id);
+      renderTimers();
+    }
+
+    function formatTime(seconds) {
+      seconds = Math.max(0, seconds);
+
+      const hrs = Math.floor(seconds / 3600);
+      const mins = Math.floor((seconds % 3600) / 60);
+      const secs = seconds % 60;
+
+      return [
+        hrs.toString().padStart(2, "0"),
+        mins.toString().padStart(2, "0"),
+        secs.toString().padStart(2, "0")
+      ].join(":");
+    }
+
+    function startTimer(id) {
+      const timer = timers.find(t => t.id === id);
+      if (!timer || timer.running) return;
+
+      timer.running = true;
+      timer.paused = false;
+      timer.finished = false;
+
+      timer.interval = setInterval(() => {
+        if (timer.remaining > 0) {
+          timer.remaining--;
+        } else {
+          finishTimer(timer);
+        }
+
+        updateTimerDisplay(timer.id);
+      }, 1000);
+
+      renderTimers();
+    }
+
+    function pauseTimer(id) {
+      const timer = timers.find(t => t.id === id);
+      if (!timer || !timer.running) return;
+
+      clearInterval(timer.interval);
+      timer.interval = null;
+      timer.running = false;
+      timer.paused = true;
+
+      renderTimers();
+    }
+
+    function stopTimer(id) {
+      const timer = timers.find(t => t.id === id);
+      if (!timer) return;
+
+      if (timer.interval) {
+        clearInterval(timer.interval);
+      }
+
+      timer.interval = null;
+      timer.running = false;
+      timer.paused = false;
+      timer.finished = false;
+      timer.remaining = timer.duration;
+
+      renderTimers();
+    }
+
+    function finishTimer(timer) {
+      if (timer.interval) {
+        clearInterval(timer.interval);
+      }
+
+      timer.interval = null;
+      timer.running = false;
+      timer.paused = false;
+      timer.finished = true;
+      timer.remaining = 0;
+
+      playBeep();
+      renderTimers();
+    }
+
+    function adjustTime(id, minutes) {
+      const timer = timers.find(t => t.id === id);
+      if (!timer) return;
+
+      const seconds = minutes * 60;
+
+      timer.duration = Math.max(0, timer.duration + seconds);
+      timer.remaining = Math.max(0, timer.remaining + seconds);
+
+      if (timer.remaining > 0) {
+        timer.finished = false;
+      }
+
+      updateTimerDisplay(id);
+      renderTimers();
+    }
+
+    function setCustomDuration(id, minutes) {
+      const timer = timers.find(t => t.id === id);
+      if (!timer) return;
+
+      const value = Number(minutes);
+      if (value < 0 || isNaN(value)) return;
+
+      timer.duration = value * 60;
+
+      if (!timer.running) {
+        timer.remaining = timer.duration;
+      }
+
+      renderTimers();
+    }
+
+    function updateName(id, value) {
+      const timer = timers.find(t => t.id === id);
+      if (timer) {
+        timer.name = value;
+      }
+    }
+
+    function updateScheduleTime(id, value) {
+      const timer = timers.find(t => t.id === id);
+      if (timer) {
+        timer.scheduledTime = value;
+      }
+    }
+
+    function enableSchedule(id) {
+      const timer = timers.find(t => t.id === id);
+      if (!timer) return;
+
+      if (!timer.scheduledTime) {
+        alert("Please select a start time first.");
+        return;
+      }
+
+      timer.scheduleEnabled = true;
+      renderTimers();
+    }
+
+    function disableSchedule(id) {
+      const timer = timers.find(t => t.id === id);
+      if (!timer) return;
+
+      timer.scheduleEnabled = false;
+      renderTimers();
+    }
+
+    function checkSchedules() {
+      const now = new Date();
+      const currentTime =
+        now.getHours().toString().padStart(2, "0") +
+        ":" +
+        now.getMinutes().toString().padStart(2, "0");
+
+      timers.forEach(timer => {
+        if (
+          timer.scheduleEnabled &&
+          timer.scheduledTime === currentTime &&
+          !timer.running
+        ) {
+          timer.scheduleEnabled = false;
+          timer.remaining = timer.duration;
+          startTimer(timer.id);
+        }
+      });
+    }
+
+    setInterval(checkSchedules, 1000);
+
+    function updateTimerDisplay(id) {
+      const timer = timers.find(t => t.id === id);
+      if (!timer) return;
+
+      const display = document.getElementById(`display-${id}`);
+      if (display) {
+        display.textContent = formatTime(timer.remaining);
+      }
+    }
+
+    function getStatus(timer) {
+      if (timer.finished) return "Finished";
+      if (timer.running) return "Running";
+      if (timer.paused) return "Paused";
+      if (timer.scheduleEnabled) return "Scheduled for " + timer.scheduledTime;
+      return "Stopped";
+    }
+
+    function renderTimers() {
+      const container = document.getElementById("timersContainer");
+      const emptyMessage = document.getElementById("emptyMessage");
+
+      container.innerHTML = "";
+
+      emptyMessage.style.display = timers.length === 0 ? "block" : "none";
+
+      timers.forEach(timer => {
+        const card = document.createElement("div");
+
+        let cardClass = "timer-card";
+        if (timer.running) cardClass += " running";
+        if (timer.paused) cardClass += " paused";
+        if (timer.finished) cardClass += " finished";
+
+        card.className = cardClass;
+
+        card.innerHTML = `
+          <div class="timer-header">
+            <input 
+              class="timer-name"
+              value="${timer.name}"
+              onchange="updateName(${timer.id}, this.value)"
+              placeholder="Timer name"
+            />
+            <button class="remove-btn small-btn" onclick="removeTimer(${timer.id})">Remove</button>
+          </div>
+
+          <div class="display" id="display-${timer.id}">
+            ${formatTime(timer.remaining)}
+          </div>
+
+          <div class="status">
+            Status: ${getStatus(timer)}
+          </div>
+
+          <div class="controls">
+            <button class="start-btn" onclick="startTimer(${timer.id})">Start</button>
+            <button class="pause-btn" onclick="pauseTimer(${timer.id})">Pause</button>
+            <button class="stop-btn" onclick="stopTimer(${timer.id})">Stop</button>
+          </div>
+
+          <div class="adjustments">
+            <button class="small-btn" onclick="adjustTime(${timer.id}, -30)">-30 min</button>
+            <button class="small-btn" onclick="adjustTime(${timer.id}, -15)">-15 min</button>
+            <button class="small-btn" onclick="adjustTime(${timer.id}, -5)">-5 min</button>
+            <button class="small-btn" onclick="adjustTime(${timer.id}, -1)">-1 min</button>
+            <button class="small-btn" onclick="adjustTime(${timer.id}, 1)">+1 min</button>
+            <button class="small-btn" onclick="adjustTime(${timer.id}, 5)">+5 min</button>
+            <button class="small-btn" onclick="adjustTime(${timer.id}, 15)">+15 min</button>
+            <button class="small-btn" onclick="adjustTime(${timer.id}, 30)">+30 min</button>
+          </div>
+
+          <div class="schedule-box">
+            <div class="schedule-row">
+              <div>
+                <label>Custom duration in minutes</label>
+                <input 
+                  type="number" 
+                  min="0"
+                  value="${Math.round(timer.duration / 60)}"
+                  onchange="setCustomDuration(${timer.id}, this.value)"
+                />
+              </div>
+
+              <div>
+                <label>Schedule start time</label>
+                <input 
+                  type="time"
+                  value="${timer.scheduledTime}"
+                  onchange="updateScheduleTime(${timer.id}, this.value)"
+                />
+              </div>
+            </div>
+
+            <div class="schedule-actions">
+              <button class="add-btn small-btn" onclick="enableSchedule(${timer.id})">Enable Schedule</button>
+              <button class="stop-btn small-btn" onclick="disableSchedule(${timer.id})">Cancel Schedule</button>
+            </div>
+
+            <div class="schedule-info">
+              ${timer.scheduleEnabled ? "Timer will auto-start at " + timer.scheduledTime : ""}
+            </div>
+          </div>
+        `;
+
+        container.appendChild(card);
+      });
+    }
+
+    function playBeep() {
+      try {
+        const audioContext = new AudioContext();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+
+        oscillator.frequency.value = 880;
+        gainNode.gain.value = 0.2;
+
+        oscillator.start();
+
+        setTimeout(() => {
+          oscillator.stop();
+          audioContext.close();
+        }, 500);
+      } catch (e) {
+        console.log("Audio not supported");
+      }
+    }
+
+    addTimer();
+  </script>
+</body>
+</html>
