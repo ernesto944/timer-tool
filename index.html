@@ -173,7 +173,7 @@
 
     .schedule-row {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1fr 1fr 90px;
       gap: 10px;
       margin-bottom: 10px;
     }
@@ -186,7 +186,8 @@
     }
 
     input[type="time"],
-    input[type="number"] {
+    input[type="number"],
+    input[type="text"] {
       width: 100%;
       padding: 9px;
       border-radius: 10px;
@@ -310,6 +311,27 @@
       ].join(":");
     }
 
+    function getSchedulePeriod(timeValue) {
+      if (!timeValue) return "AM or PM";
+
+      const hour = Number(timeValue.split(":")[0]);
+      return hour >= 12 ? "PM" : "AM";
+    }
+
+    function formatScheduleDisplay(timeValue) {
+      if (!timeValue) return "";
+
+      const parts = timeValue.split(":");
+      let hour = Number(parts[0]);
+      const minute = parts[1];
+      const period = hour >= 12 ? "PM" : "AM";
+
+      hour = hour % 12;
+      if (hour === 0) hour = 12;
+
+      return hour.toString().padStart(2, "0") + ":" + minute + " " + period;
+    }
+
     function startTimer(id) {
       const timer = timers.find(t => t.id === id);
       if (!timer || timer.running) return;
@@ -419,6 +441,11 @@
       const timer = timers.find(t => t.id === id);
       if (timer) {
         timer.scheduledTime = value;
+
+        const periodBox = document.getElementById("period-" + id);
+        if (periodBox) {
+          periodBox.value = getSchedulePeriod(value);
+        }
       }
     }
 
@@ -479,7 +506,7 @@
       if (timer.finished) return "Finished";
       if (timer.running) return "Running";
       if (timer.paused) return "Paused";
-      if (timer.scheduleEnabled) return "Scheduled for " + timer.scheduledTime;
+      if (timer.scheduleEnabled) return "Scheduled for " + formatScheduleDisplay(timer.scheduledTime);
       return "Stopped";
     }
 
@@ -557,6 +584,16 @@
                   onchange="updateScheduleTime(${timer.id}, this.value)"
                 />
               </div>
+
+              <div>
+                <label><--Pick from:</label>
+                <input
+                  type="text"
+                  id="period-${timer.id}"
+                  value="${getSchedulePeriod(timer.scheduledTime)}"
+                  readonly
+                />
+              </div>
             </div>
 
             <div class="schedule-actions">
@@ -565,7 +602,7 @@
             </div>
 
             <div class="schedule-info">
-              ${timer.scheduleEnabled ? "Timer will auto-start at " + timer.scheduledTime : ""}
+              ${timer.scheduleEnabled ? "Timer will auto-start at " + formatScheduleDisplay(timer.scheduledTime) : ""}
             </div>
           </div>
         `;
